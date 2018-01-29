@@ -41,7 +41,22 @@ main = do
       -- Don't worry if you don't get all of these done. :)
 
       -- 1) The '<topic>/add' route will respond with an error when given an empty comment
+
+        it "add responds with an error when given an empty comment" $
+          post "/zomg/add" "" `shouldRespondWith` "Empty Comment" {matchStatus = 400}
+
       -- 2) The '<topic>/view' route will respond correctly when given a topic
+
+        it "view will respond correctly to a topic" $
+          get "/zomg/view" `shouldRespondWith` "View Request not implemented"
+
       -- 3) The '<topic>/view' route will respond with an error when given an empty topic
+
+        it "view responds with an error given an empty topic" $
+          get "//view" `shouldRespondWith` "Empty Topic" {matchStatus = 400}
+
       -- 4) A gibberish route will return a 404
+
+        it "view responds with an error given an empty topic" $
+          get "/sdkfadsjfh"  `shouldRespondWith` "Unknown Route" {matchStatus = 404}
 

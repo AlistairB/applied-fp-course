@@ -100,12 +100,6 @@ getRequest _ (topic:"view":[]) "GET"    = mkViewRequest topic
 getRequest body (topic:"add":[]) "POST" = mkAddRequest topic body
 getRequest _ _ _                        = Left UnknownRequestError
 
--- getRequest body paths method
---   | paths == ["list"] && method == "GET" = mkListRequest
---   | length paths == 2 && paths !! 1 == "view" && method == "GET" = mkViewRequest $ head paths
---   | length paths == 2 && paths !! 1 == "add" && method == "POST" = mkAddRequest (head paths) body
---   | otherwise = Left UnknownRequestError
-
 -- If we find that we need more information to handle a request, or we have a
 -- new type of request that we'd like to handle then we update the ``RqType``
 -- structure and the compiler will let us know which parts of our application
