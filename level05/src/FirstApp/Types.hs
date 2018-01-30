@@ -2,6 +2,7 @@
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module FirstApp.Types
   ( Error (..)
   , ConfigError (..)
@@ -31,8 +32,9 @@ import           Data.Text                          (Text)
 
 import           System.IO.Error                    (IOError)
 
-import           Data.Monoid                        (Last,
-                                                     Monoid (mappend, mempty))
+import           Data.Monoid                        (Last (Last),
+                                                     Monoid (mappend, mempty),
+                                                     (<>))
 
 import           Data.List                          (stripPrefix)
 import           Data.Maybe                         (fromMaybe)
@@ -192,6 +194,9 @@ newtype DBFilePath = DBFilePath
 -- - A customisable port number: ``Port``
 -- - A filepath for our SQLite database: ``DBFilePath``
 data Conf = Conf
+  { getConfPort     :: Port
+  , getConfFilePath :: DBFilePath
+  }
 
 -- We're storing our Port as a Word16 to be more precise and prevent invalid
 -- values from being used in our application. However Wai is not so stringent.
@@ -200,12 +205,14 @@ data Conf = Conf
 confPortToWai
   :: Conf
   -> Int
-confPortToWai =
-  error "confPortToWai not implemented"
+confPortToWai = fromIntegral . getPort . getConfPort
 
 -- Similar to when we were considering our application types, leave this empty
 -- for now and add to it as you go.
-data ConfigError = ConfigError
+data ConfigError =
+    ConfigIOError IOError
+  | ConfigParseError
+  | ConfigMissingFieldsError
   deriving Show
 
 -- Our application will be able to load configuration from both a file and
@@ -244,9 +251,9 @@ data PartialConf = PartialConf
 instance Monoid PartialConf where
   mempty = PartialConf mempty mempty
 
-  mappend _a _b = PartialConf
-    { pcPort       = error "pcPort mappend not implemented"
-    , pcDBFilePath = error "pcDBFilePath mappend not implemented"
+  mappend (PartialConf aPort aFilePath) (PartialConf bPort bFilePath) = PartialConf
+    { pcPort       = aPort <> bPort
+    , pcDBFilePath = aFilePath <> bFilePath
     }
 
 -- When it comes to reading the configuration options from the command-line, we
@@ -259,4 +266,10 @@ instance Monoid PartialConf where
 -- have to tell aeson how to go about converting the JSON into our PartialConf
 -- data structure.
 instance FromJSON PartialConf where
-  parseJSON = error "parseJSON for PartialConf not implemented yet."
+  parseJSON (A.Object v) =
+        let mPort = A.parseMaybe (flip (A..:) "port") v
+            mFileName = A.parseMaybe (flip (A..:) "dbFileName") v
+            cPort = Last $ (Port <$> mPort)
+            cFileName = Last $ (DBFilePath <$> mFileName)
+        in  pure $ PartialConf cPort cFileName
+  parseJSON invalid    = A.typeMismatch "PartialConf" invalid

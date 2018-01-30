@@ -14,8 +14,10 @@ import           Control.Exception          (try)
 import           Data.Aeson                 (FromJSON, Object)
 
 import qualified Data.Aeson                 as Aeson
+import           Data.Bifunctor             (first)
+-- import           Data.Either.Combinators    (maybeToRight)
 
-import           FirstApp.Types             (ConfigError,
+import           FirstApp.Types             (ConfigError (..),
                                              PartialConf (PartialConf))
 -- Doctest setup section
 -- $setup
@@ -40,13 +42,19 @@ import           FirstApp.Types             (ConfigError,
 readConfFile
   :: FilePath
   -> IO ( Either ConfigError ByteString )
-readConfFile =
-  error "readConfFile not implemented"
+readConfFile filePath = first ConfigIOError <$> try (LBS.readFile filePath)
+
+-- copied from `either` package.. for some reason can't import this
+maybeToRight :: b -> Maybe a -> Either b a
+maybeToRight _ (Just x) = Right x
+maybeToRight y Nothing  = Left y
 
 -- Construct the function that will take a ``FilePath``, read it in, decode it,
 -- and construct our ``PartialConf``.
 parseJSONConfigFile
   :: FilePath
   -> IO ( Either ConfigError PartialConf )
-parseJSONConfigFile =
-  error "parseJSONConfigFile not implemented"
+parseJSONConfigFile filePath = do
+  result <- first ConfigIOError <$> try (LBS.readFile filePath)
+  pure $ result >>= maybeToRight ConfigParseError . Aeson.decode
+

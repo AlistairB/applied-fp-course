@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -fno-warn-unused-matches #-}
 module FirstApp.Main
   ( runApp
@@ -18,6 +19,7 @@ import           Network.HTTP.Types                 (Status, hContentType,
 
 import qualified Data.ByteString.Lazy               as LBS
 
+import           Data.Bifunctor                     (first, second)
 import           Data.Either                        (either)
 import           Data.Monoid                        ((<>))
 
@@ -31,9 +33,14 @@ import qualified Data.Aeson                         as A
 
 import qualified FirstApp.Conf                      as Conf
 import qualified FirstApp.DB                        as DB
-import           FirstApp.Types                     (Conf, ContentType (..),
-                                                     Error (..),
+import           FirstApp.Types                     (Conf (Conf), ConfigError,
+                                                     ContentType (..),
+                                                     DBFilePath (DBFilePath),
+                                                     Error (..), Port (Port),
                                                      RqType (AddRq, ListRq, ViewRq),
+                                                     confPortToWai,
+                                                     getConfFilePath,
+                                                     getDBFilePath,
                                                      mkCommentText, mkTopic,
                                                      renderContentType)
 
@@ -42,6 +49,8 @@ import           FirstApp.Types                     (Conf, ContentType (..),
 -- single type so that we can deal with the entire start-up process as a whole.
 data StartUpError
   = DbInitErr SQLiteResponse
+  | ConfigFail ConfigError
+  | DBFail SQLiteResponse
   deriving Show
 
 runApp :: IO ()
@@ -50,8 +59,11 @@ runApp = do
   cfgE <- prepareAppReqs
   -- Loading the configuration can fail, so we have to take that into account now.
   case cfgE of
-    Left err   -> undefined
-    Right _cfg -> run undefined undefined
+    Left err -> putStrLn (show err)
+    Right (conf, db) ->
+      let port = confPortToWai conf
+          filePath = (getDBFilePath . getConfFilePath) conf
+      in  run (confPortToWai conf) (app conf db)
 
 -- We need to complete the following steps to prepare our app requirements:
 --
@@ -63,8 +75,12 @@ runApp = do
 --
 prepareAppReqs
   :: IO ( Either StartUpError ( Conf, DB.FirstAppDB ) )
-prepareAppReqs =
-  error "copy your prepareAppReqs from the previous level."
+prepareAppReqs = do
+  eitherConf <- Conf.parseOptions "appconfig.json"
+  case eitherConf of
+    Left e -> pure $ Left $ ConfigFail e
+    Right c@(Conf _ (DBFilePath filePath)) ->
+      first DBFail <$> second (c,) <$> DB.initDB filePath
 
 -- | Some helper functions to make our lives a little more DRY.
 mkResponse
