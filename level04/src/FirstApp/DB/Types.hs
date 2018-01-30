@@ -14,6 +14,11 @@ import           Database.SQLite.Simple.FromRow (FromRow (fromRow), field)
 -- Complete in the DbComment type below so it is a record type that matches the
 -- Comment type, but without the newtype wrappers for each value.
 data DBComment = DBComment
+  { dbCommentId    :: Int
+  , dbCommentTopic :: Text
+  , dbCommentBody  :: Text
+  , dbCommentTime  :: UTCTime
+  }
   deriving Show
 
 -- This Typeclass comes from the `sqlite-simple` package and describes how to
@@ -21,5 +26,5 @@ data DBComment = DBComment
 -- type. This technique of translating a result row to a type will differ
 -- between different packages/databases.
 instance FromRow DBComment where
-
+  fromRow = DBComment <$> field <*> field <*> field <*> field
 -- Now move to ``src/FirstApp/Types.hs``

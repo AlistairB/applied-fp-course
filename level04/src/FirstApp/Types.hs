@@ -16,21 +16,22 @@ module FirstApp.Types
   , fromDbComment
   ) where
 
-import           GHC.Generics      (Generic)
+import           GHC.Generics                       (Generic)
 
-import           Data.ByteString   (ByteString)
-import           Data.Text         (Text)
+import           Data.ByteString                    (ByteString)
+import           Data.Text                          (Text)
 
-import           Data.List         (stripPrefix)
-import           Data.Maybe        (fromMaybe)
+import           Data.List                          (stripPrefix)
+import           Data.Maybe                         (fromMaybe)
 
-import           Data.Aeson        (ToJSON (toJSON))
-import qualified Data.Aeson        as A
-import qualified Data.Aeson.Types  as A
+import           Data.Aeson                         (ToJSON (toJSON))
+import qualified Data.Aeson                         as A
+import qualified Data.Aeson.Types                   as A
+import           Database.SQLite.SimpleErrors.Types (SQLiteResponse)
 
-import           Data.Time         (UTCTime)
+import           Data.Time                          (UTCTime)
 
-import           FirstApp.DB.Types (DBComment)
+import           FirstApp.DB.Types                  (DBComment (DBComment))
 
 newtype Topic = Topic Text
   deriving (Show, ToJSON)
@@ -69,8 +70,7 @@ data Comment = Comment
 modFieldLabel
   :: String
   -> String
-modFieldLabel =
-  error "modFieldLabel not implemented"
+modFieldLabel a = fromMaybe a $ stripPrefix "comment" a
 
 instance ToJSON Comment where
   -- This is one place where we can take advantage of our `Generic` instance.
@@ -95,8 +95,8 @@ instance ToJSON Comment where
 fromDbComment
   :: DBComment
   -> Either Error Comment
-fromDbComment =
-  error "fromDbComment not yet implemented"
+fromDbComment (DBComment id' topic body time) =
+  Comment (CommentId id') <$> mkTopic topic <*> mkCommentText body <*> (pure time)
 
 nonEmptyText
   :: (Text -> a)
@@ -139,6 +139,7 @@ data Error
   = UnknownRoute
   | EmptyCommentText
   | EmptyTopic
+  | DBConnectionError SQLiteResponse
   -- We need another constructor for our DB error types.
   deriving Show
 
