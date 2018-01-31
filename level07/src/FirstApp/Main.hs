@@ -5,6 +5,7 @@ module FirstApp.Main
   , app
   ) where
 
+import           Control.Applicative                (liftA2)
 import           Control.Monad.Except               (ExceptT (ExceptT),
                                                      runExceptT)
 import           Control.Monad.IO.Class             (liftIO)
@@ -15,7 +16,7 @@ import           Network.Wai                        (Application, Request,
                                                      strictRequestBody)
 import           Network.Wai.Handler.Warp           (run)
 
-import           Data.Bifunctor                     (first)
+import           Data.Bifunctor                     (first, bimap)
 import           Data.Either                        (Either (Left, Right),
                                                      either)
 
@@ -43,7 +44,7 @@ import           FirstApp.Types                     (Conf (..),
 
 import           FirstApp.AppM                      (AppM,
                                                      Env (Env, envConfig, envDB),
-                                                     runAppM, liftEither)
+                                                     liftEither, runAppM)
 
 -- Our start-up process is becoming more complicated and could fail in new and
 -- interesting ways. But we also want to be able to capture these errors in a
@@ -74,14 +75,20 @@ runApp = do
 -- Either value.
 prepareAppReqs
   :: IO (Either StartUpError Env)
-prepareAppReqs =
-  error "Copy your completed 'prepareAppReqs' and refactor to match the new type signature"
+prepareAppReqs = do
+  let eitherConf = initConf
+      eitherDb = eitherConf >>= initDB
+
+  -- Wrap our values (if we have them) in our Env for use in other parts of our
+  -- application. We do it this way so we can have access to the bits we need
+  -- when starting up the full app or one for testing.
+  runExceptT $ liftA2 ( Env logToErr ) eitherConf eitherDb
   where
     logToErr :: Text -> AppM ()
     logToErr = liftIO . hPutStrLn stderr
 
     toStartUpErr :: (a -> StartUpError) -> IO (Either a c) -> ExceptT StartUpError IO c
-    toStartUpErr = error "toStartUpErr not reimplemented"
+    toStartUpErr f ioac = ExceptT $ fmap (first f) ioac
 
     -- Take our possibly failing configuration/db functions with their unique
     -- error types and turn them into a consistently typed ExceptT. We can then

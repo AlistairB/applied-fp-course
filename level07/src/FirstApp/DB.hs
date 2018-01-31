@@ -70,29 +70,42 @@ runDB
   :: (a -> Either Error b)
   -> (Connection -> IO a)
   -> AppM b
-runDB =
-  error "Copy your completed 'runDB' and refactor to match the new type signature"
+runDB f fa = do
+  conn <- getDBConn
+  result <- liftIO $ Sql.runDBAction $ fa conn
+  let mappedError = first DBError result
+  liftEither $ mappedError >>= f
 
 getComments
   :: Topic
   -> AppM [Comment]
-getComments =
-  error "Copy your completed 'getComments' and refactor to match the new type signature"
+getComments topic = runDB (traverse fromDbComment) dbCommand
+  where
+    sql =  "SELECT id,topic,comment,time FROM comments WHERE topic = ?"
+    dbCommand conn = Sql.query conn sql (Sql.Only (getTopic topic))
 
 addCommentToTopic
   :: Topic
   -> CommentText
   -> AppM ()
-addCommentToTopic =
-  error "Copy your completed 'appCommentToTopic' and refactor to match the new type signature"
+addCommentToTopic  topic commentText = runDB Right dbCommand
+  where
+    sql = "INSERT INTO comments (topic,comment,time) VALUES (?,?,?)"
+    dbCommand conn = do
+      dateTime <- getCurrentTime
+      Sql.execute conn sql (getTopic topic, getCommentText commentText, dateTime)
 
 getTopics
   :: AppM [Topic]
-getTopics =
-  error "Copy your completed 'getTopics' and refactor to match the new type signature"
+getTopics = runDB (traverse (mkTopic . Sql.fromOnly)) dbCommand
+  where
+    sql = "SELECT DISTINCT topic FROM comments"
+    dbCommand conn = Sql.query_ conn sql
 
 deleteTopic
   :: Topic
   -> AppM ()
-deleteTopic =
-  error "Copy your completed 'deleteTopic' and refactor to match the new type signature"
+deleteTopic topic = runDB Right dbCommand
+  where
+    sql = "DELETE FROM comments WHERE topic = ?"
+    dbCommand conn = Sql.execute conn sql (Sql.Only $ getTopic topic)
