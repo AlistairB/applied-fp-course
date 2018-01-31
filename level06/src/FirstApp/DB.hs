@@ -22,7 +22,6 @@ import           Database.SQLite.Simple             (Connection, FromRow,
                                                      Query (fromQuery), ToRow)
 import qualified Database.SQLite.Simple             as Sql
 
-import           Data.Bifunctor                     (first)
 import qualified Database.SQLite.SimpleErrors       as Sql
 import           Database.SQLite.SimpleErrors.Types (SQLiteResponse)
 

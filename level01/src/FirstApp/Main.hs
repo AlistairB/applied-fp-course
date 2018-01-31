@@ -32,7 +32,7 @@ app
   :: Request
   -> (Response -> IO ResponseReceived)
   -> IO ResponseReceived
-app _ cb = do
+app _ cb =
   cb $ responseLBS
         status200
         [("Content-Type", "text/plain")]

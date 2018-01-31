@@ -59,7 +59,7 @@ runApp = do
   cfgE <- prepareAppReqs
   -- Loading the configuration can fail, so we have to take that into account now.
   case cfgE of
-    Left err -> putStrLn (show err)
+    Left err -> print err
     Right (conf, db) ->
       let port = confPortToWai conf
           filePath = (getDBFilePath . getConfFilePath) conf
@@ -80,7 +80,7 @@ prepareAppReqs = do
   case eitherConf of
     Left e -> pure $ Left $ ConfigFail e
     Right c@(Conf _ (DBFilePath filePath)) ->
-      first DBFail <$> second (c,) <$> DB.initDB filePath
+      first DBFail . second (c,) <$> DB.initDB filePath
 
 -- | Some helper functions to make our lives a little more DRY.
 mkResponse

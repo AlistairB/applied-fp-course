@@ -51,7 +51,7 @@ data StartUpError
 runApp :: IO ()
 runApp = do
   eitherDb <- prepareAppReqs
-  () <$ traverse (\db -> run 3000 (app db)) eitherDb
+  () <$ traverse (run 3000 . app) eitherDb
 
 -- We need to complete the following steps to prepare our app requirements:
 --
@@ -63,7 +63,7 @@ runApp = do
 --
 prepareAppReqs
   :: IO ( Either StartUpError DB.FirstAppDB )
-prepareAppReqs = first DbInitErr <$> (DB.initDB "db.lite")
+prepareAppReqs = first DbInitErr <$> DB.initDB "db.lite"
 
 -- | Some helper functions to make our lives a little more DRY.
 mkResponse
@@ -131,7 +131,7 @@ handleRequest
   :: DB.FirstAppDB
   -> RqType
   -> IO (Either Error Response)
-handleRequest _db (AddRq topic comment) = do
+handleRequest _db (AddRq topic comment) =
   (resp200 PlainText "Success" <$) <$> DB.addCommentToTopic _db topic comment
 handleRequest _db (ViewRq topic) = (fmap . fmap) resp200Json $ DB.getComments _db topic
 handleRequest _db ListRq = (fmap . fmap) resp200Json $ DB.getTopics _db
@@ -179,4 +179,4 @@ mkErrorResponse EmptyCommentText =
 mkErrorResponse EmptyTopic =
   resp400 PlainText "Empty Topic"
 mkErrorResponse (DBConnectionError a) =
-  resp400 PlainText (LBS.pack $ "Db Error: " ++ (show a))
+  resp400 PlainText (LBS.pack $ "Db Error: " ++ show a)

@@ -105,7 +105,7 @@ prepareAppReqs = do
 app
   :: Env
   -> Application
-app env rq cb = (flip runAppM) env $ do
+app env rq cb = flip runAppM env $ do
   rq' <- mkRequest rq
   resp <- handleRespErr =<< handleRErr rq'
   liftIO $ cb resp

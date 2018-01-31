@@ -96,7 +96,7 @@ fromDbComment
   :: DBComment
   -> Either Error Comment
 fromDbComment (DBComment id' topic body time) =
-  Comment (CommentId id') <$> mkTopic topic <*> mkCommentText body <*> (pure time)
+  Comment (CommentId id') <$> mkTopic topic <*> mkCommentText body <*> pure time
 
 nonEmptyText
   :: (Text -> a)

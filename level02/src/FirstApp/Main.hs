@@ -60,7 +60,7 @@ mkAddRequest
   :: Text
   -> LBS.ByteString
   -> Either Error RqType
-mkAddRequest t c = AddRq <$> (mkTopic t) <*> (mkCommentText . decodeUtf8 . LBS.toStrict $ c)
+mkAddRequest t c = AddRq <$> mkTopic t <*> (mkCommentText . decodeUtf8 . LBS.toStrict $ c)
 
 -- This has a number of benefits, we're able to isolate our validation
 -- requirements into smaller components that are simpler to maintain and verify. -- It also allows for greater reuse and it also means that validation is not
@@ -95,9 +95,9 @@ mkRequest r = do
   pure $ getRequest body path method
 
 getRequest :: LBS.ByteString -> [Text] -> Method -> Either Error RqType
-getRequest _ ("list":[]) "GET"          = mkListRequest
-getRequest _ (topic:"view":[]) "GET"    = mkViewRequest topic
-getRequest body (topic:"add":[]) "POST" = mkAddRequest topic body
+getRequest _ ["list"] "GET"          = mkListRequest
+getRequest _ [topic, "view"] "GET"    = mkViewRequest topic
+getRequest body [topic, "add"] "POST" = mkAddRequest topic body
 getRequest _ _ _                        = Left UnknownRequestError
 
 -- If we find that we need more information to handle a request, or we have a

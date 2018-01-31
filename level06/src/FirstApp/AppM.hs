@@ -57,7 +57,7 @@ runAppM (AppM f) = f
 
 instance Functor AppM where
   fmap :: (a -> b) -> AppM a -> AppM b
-  fmap f (AppM aF) = AppM $ (fmap f) . aF
+  fmap f (AppM aF) = AppM $ fmap f . aF
 
 instance Applicative AppM where
   pure :: a -> AppM a

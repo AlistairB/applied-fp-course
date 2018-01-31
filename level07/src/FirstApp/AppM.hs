@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -87,7 +86,7 @@ instance Monad AppM where
   return = pure
 
   (>>=) :: AppM a -> (a -> AppM b) -> AppM b
-  (>>=) (AppM fa) f = AppM $ \env -> (fa env) >>= \a -> case a of
+  (>>=) (AppM fa) f = AppM $ \env -> fa env >>= \a -> case a of
                                                           Left b -> pure (Left b)
                                                           Right a' -> runAppM (f a') env
 

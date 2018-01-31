@@ -14,7 +14,6 @@ import           Control.Exception          (try)
 import           Data.Aeson                 (FromJSON, Object)
 
 import qualified Data.Aeson                 as Aeson
-import           Data.Bifunctor             (first)
 -- import           Data.Either.Combinators    (maybeToRight)
 
 import           FirstApp.Types             (ConfigError (..),

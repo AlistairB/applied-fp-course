@@ -89,7 +89,7 @@ getComments (FirstAppDB conn) topic =
   in do
      result <- Sql.runDBAction $ Sql.query conn sql [getTopic topic]
      let mappedErrors = first DBConnectionError result
-     pure $ mappedErrors >>= (traverse fromDbComment)
+     pure $ mappedErrors >>= traverse fromDbComment
 
 addCommentToTopic
   :: FirstAppDB
@@ -115,7 +115,7 @@ getTopics (FirstAppDB conn) =
   in do
     result <- Sql.runDBAction $ Sql.query_ conn sql
     let mappedErrors = first DBConnectionError result
-    pure $ mappedErrors >>= (traverse (mkTopic . Sql.fromOnly))
+    pure $ mappedErrors >>= traverse (mkTopic . Sql.fromOnly)
 
 deleteTopic
   :: FirstAppDB

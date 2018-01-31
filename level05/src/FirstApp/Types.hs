@@ -267,9 +267,9 @@ instance Monoid PartialConf where
 -- data structure.
 instance FromJSON PartialConf where
   parseJSON (A.Object v) =
-        let mPort = A.parseMaybe (flip (A..:) "port") v
-            mFileName = A.parseMaybe (flip (A..:) "dbFileName") v
-            cPort = Last $ (Port <$> mPort)
-            cFileName = Last $ (DBFilePath <$> mFileName)
+        let mPort = A.parseMaybe (A..: "port") v
+            mFileName = A.parseMaybe (A..: "dbFileName") v
+            cPort = Last $ Port <$> mPort
+            cFileName = Last $ DBFilePath <$> mFileName
         in  pure $ PartialConf cPort cFileName
   parseJSON invalid    = A.typeMismatch "PartialConf" invalid
